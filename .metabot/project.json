@@ -1,0 +1,17 @@
+{
+  "name": "ContextOS",
+  "path": "/mnt/chengrongfeng_private/cc_dump/ContextOS",
+  "description": "Claude Context 控制系统 - 通过 Proxy 实现 Token 可观测、Context 压缩、Session 管理",
+  "status": "active",
+  "customFields": {
+    "priority": "medium",
+    "currentPhase": "Phase 1 complete, Phase 2-3 core code done",
+    "currentTask": "Web Dashboard + integration testing",
+    "progress": "Phase1: 100%, Phase2: 100%, Phase3: 50%",
+    "blockers": [],
+    "nextAction": "Phase 3 Web Dashboard (React Flow session graph)",
+    "lastPushDate": "2026-05-04"
+  },
+  "createdAt": "2026-05-04T10:00:00.000Z",
+  "updatedAt": "2026-05-04T12:20:00.000Z"
+}
