@@ -4,21 +4,63 @@
 
 ContextOS 是一个面向 Claude Code / Claude API 的中间层系统，通过 Proxy 拦截请求/响应，实现 Token 可观测、Context 压缩、Tool 裁剪、Session Fork 等能力，解决长对话 Context 爆炸和长任务断裂的问题。
 
+[English](./README.md)
+
 ## 快速开始
 
+### 环境要求
+
+- Python 3.13+
+- Node.js 18+（前端构建可选）
+- [Anthropic API Key](https://console.anthropic.com/settings/keys)
+
+### 安装方式
+
+#### 方式 A：虚拟环境（推荐，隔离测试）
+
 ```bash
-# 1. 安装依赖
+git clone https://github.com/CRF2004/ContextOS.git
+cd ContextOS
+
+# 创建隔离环境
+python3 -m venv .venv
+source .venv/bin/activate        # macOS / Linux
+# .venv\Scripts\activate         # Windows
+
+# 安装依赖
+pip install -e ".[dev]"
+
+# 启动服务
+ANTHROPIC_API_KEY=sk-ant-... contextos run --port 8199
+```
+
+#### 方式 B：pipx（最干净，无需激活 venv）
+
+```bash
+pipx install git+https://github.com/CRF2004/ContextOS.git
+ANTHROPIC_API_KEY=sk-ant-... contextos run --port 8199
+```
+
+#### 方式 C：不安装，直接运行
+
+```bash
+git clone https://github.com/CRF2004/ContextOS.git
 cd ContextOS
 pip install fastapi uvicorn httpx aiosqlite pydantic python-dotenv tiktoken
-
-# 2. 启动服务
-ANTHROPIC_API_KEY=sk-ant-... contextos run --port 8199
-
-# 或使用 PYTHONPATH
 PYTHONPATH=src ANTHROPIC_API_KEY=sk-ant-... python -m contextos.cli run --port 8199
 ```
 
-### CLI 命令
+### 前端构建
+
+```bash
+cd web
+npm install
+npm run build    # 构建产物输出到 ../dist/web，由 FastAPI 直接服务
+```
+
+---
+
+## CLI 命令
 
 ```bash
 # 启动 Proxy 服务
@@ -148,6 +190,38 @@ ContextOS/
 pip install pytest pytest-asyncio
 PYTHONPATH=src python -m pytest tests/ -v
 ```
+
+## 卸载
+
+### 方式 A（venv）
+
+```bash
+deactivate                  # 退出虚拟环境
+rm -rf /path/to/ContextOS   # 删除项目目录
+```
+
+一切都在 `.venv` 目录内，没有修改系统文件，删除即可。
+
+### 方式 B（pipx）
+
+```bash
+pipx uninstall contextos
+```
+
+### 方式 C（pip）
+
+```bash
+pip uninstall contextos     # 如果通过 `pip install -e .` 安装
+```
+
+清理生成的数据文件：
+
+```bash
+rm -f ./contextos.db        # SQLite 数据库
+rm -rf dist/web             # 构建的前端资源
+```
+
+---
 
 ## 相关文件
 

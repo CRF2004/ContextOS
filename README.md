@@ -28,23 +28,43 @@ A transparent proxy layer for the Claude API that provides Token observability, 
 - Node.js 18+ (for frontend)
 - An [Anthropic API Key](https://console.anthropic.com/settings/keys)
 
-### Backend
+### Installation
+
+#### Option A: Virtual Environment (recommended for testing)
+
+```bash
+git clone https://github.com/CRF2004/ContextOS.git
+cd ContextOS
+
+# Create isolated environment
+python3 -m venv .venv
+source .venv/bin/activate        # macOS / Linux
+# .venv\Scripts\activate         # Windows
+
+# Install dependencies
+pip install -e ".[dev]"
+
+# Run server
+ANTHROPIC_API_KEY=sk-ant-... contextos run --port 8199
+```
+
+#### Option B: pipx (cleanest — no venv activation needed)
+
+```bash
+pipx install git+https://github.com/CRF2004/ContextOS.git
+ANTHROPIC_API_KEY=sk-ant-... contextos run --port 8199
+```
+
+#### Option C: Without installation
 
 ```bash
 git clone https://github.com/CRF2004/ContextOS.git
 cd ContextOS
 pip install fastapi uvicorn httpx aiosqlite pydantic python-dotenv tiktoken
-
-ANTHROPIC_API_KEY=sk-ant-... contextos run --port 8199
-```
-
-Or without installing as a package:
-
-```bash
 PYTHONPATH=src ANTHROPIC_API_KEY=sk-ant-... python -m contextos.cli run --port 8199
 ```
 
-### Frontend (optional)
+### Frontend
 
 ```bash
 cd web
@@ -190,6 +210,38 @@ PYTHONPATH=src python -m pytest tests/ -v
 ```
 
 26 tests across 3 modules — all passing.
+
+---
+
+## Uninstallation
+
+### Option A (venv)
+
+```bash
+deactivate                  # Leave the virtual environment
+rm -rf /path/to/ContextOS   # Delete the project directory
+```
+
+That's it — everything is self-contained in the `.venv` folder, no system files were modified.
+
+### Option B (pipx)
+
+```bash
+pipx uninstall contextos
+```
+
+### Option C (pip)
+
+```bash
+pip uninstall contextos     # If installed via `pip install -e .`
+```
+
+Clean up any generated data files:
+
+```bash
+rm -f ./contextos.db        # SQLite database
+rm -rf dist/web             # Built frontend assets
+```
 
 ---
 
