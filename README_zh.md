@@ -128,28 +128,6 @@ ContextOS/
 └── plan.md
 ```
 
-## 实现进度
-
-### Phase 1 — 最小可运行系统 ✅
-- [x] FastAPI Proxy Server 转发 Claude API
-- [x] Token Logger 记录请求/响应 Token 用量
-- [x] SQLite Session Storage
-- [x] CLI 可用
-- [x] 请求日志记录
-- [x] Token 曲线查询
-- [x] 26 个测试用例全部通过
-
-### Phase 2 — 可控系统 (代码已实现，待集成测试)
-- [x] Context Trimming（历史压缩）
-- [x] Tool Pruning（MCP 控制）
-- [x] Skill Injection（System Prompt 管理）
-
-### Phase 3 — 核心产品形态 (代码已实现，待前端)
-- [x] Fork Engine（手动 + 自动 Fork）
-- [x] Fork Graph（BFS 遍历 parent/child 链路）
-- [ ] Session Graph 可视化（React Flow）
-- [ ] Replay System（Session 回放）
-
 ## 架构设计
 
 ```
