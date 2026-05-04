@@ -8,7 +8,7 @@ ContextOS 是一个面向 Claude Code / Claude API 的中间层系统，通过 P
 
 ```bash
 # 1. 安装依赖
-cd /mnt/chengrongfeng_private/cc_dump/ContextOS
+cd ContextOS
 pip install fastapi uvicorn httpx aiosqlite pydantic python-dotenv tiktoken
 
 # 2. 启动服务
