@@ -1,61 +1,83 @@
 # ContextOS
 
-**Claude Context Operating System**
+[![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org/)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Tests](https://img.shields.io/badge/Tests-26%20passed-brightgreen)](tests/)
 
-A transparent proxy layer for the Claude API that provides Token observability, context control, session management, and session fork capabilities — solving context explosion in long conversations and task interruption issues.
+**Claude Context Operating System** — A transparent proxy layer for the Claude API that provides Token observability, context control, session management, and session fork capabilities.
 
-[中文版](./README_zh.md)
-
----
-
-## Features
-
-- **Token Observability** — Real-time prompt/completion token breakdown, stored and visualized
-- **Session Management** — Create, query, archive sessions with SQLite persistence
-- **Session Fork** — Branch conversations with parent/child lineage tracking, auto-fork at token thresholds
-- **Context Engine** — Message trimming, tool pruning, skill injection for context window control
-- **API Proxy** — Transparent Claude API proxy with request/response interception and logging
-- **Web Dashboard** — React-based SPA with React Flow fork graphs and Recharts token visualizations
-- **CLI** — Command-line tools for quick operations
+[中文文档](./README_zh.md)
 
 ---
 
-## Quick Start
+## 🎯 Problem
+
+Long-running Claude conversations suffer from:
+- **Context explosion** — Token usage grows unbounded, hitting model limits
+- **No visibility** — No built-in way to track token consumption per conversation
+- **Lost history** — Starting fresh means losing valuable conversation context
+- **Task interruption** — Long tasks break when context windows overflow
+
+## ✨ Solution
+
+ContextOS sits between you and the Claude API, providing:
+
+| Feature | Benefit |
+|---------|---------|
+| **Token Observability** | Real-time prompt/completion breakdown with charts |
+| **Session Management** | Persistent conversations with SQLite storage |
+| **Session Fork** | Branch conversations with parent/child lineage tracking |
+| **Context Engine** | Automatic message trimming, tool pruning, skill injection |
+| **Web Dashboard** | React-based UI with React Flow graphs and Recharts visualizations |
+
+---
+
+## 📸 Screenshots
+
+### Sessions Dashboard
+
+![Sessions Dashboard](docs/sessions-list.png)
+
+### Fork Graph Visualization
+
+![Fork Graph](docs/fork-graph.png)
+
+*The fork graph shows session lineage with parent-child relationships, token counts at fork points, and interactive navigation.*
+
+---
+
+## 🚀 Quick Start
 
 ### Prerequisites
 
-- Python 3.13+
-- Node.js 18+ (for frontend)
-- An [Anthropic API Key](https://console.anthropic.com/settings/keys)
+- Python 3.11+
+- Node.js 18+ (optional, for frontend)
+- [Anthropic API Key](https://console.anthropic.com/settings/keys)
 
 ### Installation
 
-#### Option A: Virtual Environment (recommended for testing)
+#### Option A: Virtual Environment (Recommended)
 
 ```bash
 git clone https://github.com/CRF2004/ContextOS.git
 cd ContextOS
 
-# Create isolated environment
 python3 -m venv .venv
-source .venv/bin/activate        # macOS / Linux
+source .venv/bin/activate        # macOS/Linux
 # .venv\Scripts\activate         # Windows
 
-# Install dependencies
 pip install -e ".[dev]"
-
-# Run server
 ANTHROPIC_API_KEY=sk-ant-... contextos run --port 8199
 ```
 
-#### Option B: pipx (cleanest — no venv activation needed)
+#### Option B: pipx (Cleanest)
 
 ```bash
 pipx install git+https://github.com/CRF2004/ContextOS.git
 ANTHROPIC_API_KEY=sk-ant-... contextos run --port 8199
 ```
 
-#### Option C: Without installation
+#### Option C: Without Installation
 
 ```bash
 git clone https://github.com/CRF2004/ContextOS.git
@@ -64,117 +86,98 @@ pip install fastapi uvicorn httpx aiosqlite pydantic python-dotenv tiktoken
 PYTHONPATH=src ANTHROPIC_API_KEY=sk-ant-... python -m contextos.cli run --port 8199
 ```
 
-### Frontend
+### Build Frontend (Optional)
 
 ```bash
 cd web
 npm install
-npm run build    # builds to ../dist/web (served by FastAPI)
-```
-
-### Docker
-
-```bash
-# Coming soon
+npm run build    # outputs to ../dist/web
 ```
 
 ---
 
-## CLI
+## 📖 Usage
+
+### CLI Commands
 
 ```bash
 # Start the proxy server
-contextos run --port 8199 --db ./contextos.db --api-key sk-ant-...
+contextos run --port 8199 --db ./contextos.db
 
 # List all sessions
 contextos sessions
 
-# View token usage
-contextos tokens <session_id>
+# View token usage for a session
+contextos tokens sess_abc123
 
 # View request logs
-contextos logs <session_id>
+contextos logs sess_abc123
+```
+
+### API Examples
+
+#### Create a Session
+
+```bash
+curl -X POST http://localhost:8199/api/sessions \
+  -H "Content-Type: application/json" \
+  -d '{"name": "my-conversation"}'
+```
+
+**Response:**
+```json
+{
+  "session_id": "sess_a1b2c3d4e5f6",
+  "name": "my-conversation",
+  "status": "active",
+  "parent_session_id": null,
+  "total_tokens": 0,
+  "created_at": "2026-05-04T12:00:00.000000+00:00"
+}
+```
+
+#### Call Claude via Proxy
+
+```bash
+curl -X POST "http://localhost:8199/api/proxy/messages?session_id=sess_a1b2c3d4e5f6" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "claude-sonnet-4-20250514",
+    "messages": [{"role": "user", "content": "Hello!"}]
+  }'
+```
+
+#### Fork a Session
+
+```bash
+curl -X POST http://localhost:8199/api/sessions/sess_a1b2c3d4e5f6/fork \
+  -H "Content-Type: application/json" \
+  -d '{
+    "session_id": "sess_a1b2c3d4e5f6",
+    "name": "my-conversation-branch",
+    "carry_messages": 5
+  }'
+```
+
+#### Get Fork Graph
+
+```bash
+curl http://localhost:8199/api/sessions/sess_a1b2c3d4e5f6/fork-graph
 ```
 
 ---
 
-## API Endpoints
-
-### Session Management
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/api/sessions` | Create a new session |
-| `GET`  | `/api/sessions` | List all sessions |
-| `GET`  | `/api/sessions/{id}` | Get session details |
-| `POST` | `/api/sessions/{id}/archive` | Archive a session |
-
-### Token Observability
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET`  | `/api/sessions/{id}/tokens` | Token usage summary |
-| `GET`  | `/api/sessions/{id}/tokens/history` | Token history timeline |
-| `GET`  | `/api/sessions/{id}/requests` | Request logs |
-| `POST` | `/api/tokens/count` | Count tokens in text |
-
-### Context Control
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/api/context/stats` | Get context token statistics |
-
-### Session Fork
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/api/sessions/{id}/fork` | Fork a session |
-| `GET`  | `/api/sessions/{id}/fork-graph` | Get fork relationship graph |
-
-### Proxy
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/api/proxy/messages?session_id=xxx` | Forward request to Claude API |
-
----
-
-## Project Structure
-
-```
-ContextOS/
-├── src/contextos/
-│   ├── server.py           # FastAPI application entry
-│   ├── proxy.py            # Proxy layer — intercept & forward Claude API
-│   ├── token_profiler.py   # Token profiler — tiktoken-based counting
-│   ├── session_store.py    # SQLite persistence
-│   ├── context_engine.py   # Context trimming / tool pruning / skill injection
-│   ├── fork_engine.py      # Session fork engine
-│   ├── models.py           # Pydantic data models
-│   └── cli.py              # CLI entry point
-├── web/src/
-│   ├── App.tsx             # React router with sidebar navigation
-│   ├── api/client.ts       # TypeScript API client
-│   └── pages/              # Dashboard pages: sessions, tokens, fork graph, logs
-├── tests/
-├── pyproject.toml
-├── plan.md                 # Design docs & implementation roadmap
-└── README_zh.md            # Chinese version of this README
-```
-
----
-
-## Architecture
+## 🏗 Architecture
 
 ```
                  ┌──────────────────────┐
                  │     Web Dashboard     │
-                 │ (session + graph UI)  │
+                 │   (React + TypeScript)│
                  └─────────┬────────────┘
                            │
                  ┌─────────▼────────────┐
-                 │   Orchestrator API    │
-                 │     (FastAPI)         │
+                 │   FastAPI Server     │
+                 │     (Port 8199)      │
                  ├─────────┬────────────┤
                  │         │            │
      ┌───────────▼───┐ ┌──▼──────────┐ ┌▼─────────────┐
@@ -184,67 +187,94 @@ ContextOS/
                  └────┬──────┴──────┬──────┘
                       │             │
             ┌─────────▼─────────────▼─────────┐
-            │        Proxy Layer (core)        │
-            │  Claude Code / API Intercept    │
+            │        Proxy Layer              │
+            │   (Intercept → Profile → Log)   │
             └─────────┬───────────────────────┘
                       │
                  Claude API
 ```
 
+### Core Modules
+
+| Module | File | Responsibility |
+|--------|------|----------------|
+| **Proxy** | `proxy.py` | Intercept requests, forward to Claude, capture response |
+| **Token Profiler** | `token_profiler.py` | Count tokens using tiktoken (Claude model support) |
+| **Session Store** | `session_store.py` | SQLite persistence for sessions, tokens, logs |
+| **Context Engine** | `context_engine.py` | Message trimming, tool pruning, skill injection |
+| **Fork Engine** | `fork_engine.py` | Manual and auto-fork at token thresholds |
+
 ---
 
-## Design Principles
+## 📡 API Reference
 
-1. **Proxy-first** — All requests must go through the proxy
-2. **SDK-independent** — No Claude Code SDK lock-in
-3. **Hook-based** — All capabilities implemented via request/response hooks
-4. **Not a Skill Compiler / MCP Registry / Agent Framework** — Focused scope
+### Sessions
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/sessions` | Create session |
+| `GET` | `/api/sessions` | List sessions |
+| `GET` | `/api/sessions/{id}` | Get session |
+| `POST` | `/api/sessions/{id}/archive` | Archive session |
+
+### Tokens
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/sessions/{id}/tokens` | Token summary |
+| `GET` | `/api/sessions/{id}/tokens/history` | Token history |
+| `POST` | `/api/tokens/count` | Count text tokens |
+
+### Forks
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/sessions/{id}/fork` | Fork session |
+| `GET` | `/api/sessions/{id}/fork-graph` | Get fork graph |
+
+### Proxy
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/proxy/messages?session_id=xxx` | Forward to Claude |
 
 ---
 
-## Running Tests
+## 🧪 Testing
 
 ```bash
 pip install pytest pytest-asyncio
 PYTHONPATH=src python -m pytest tests/ -v
 ```
 
-26 tests across 3 modules — all passing.
+**26 tests** across 3 modules:
+- `test_token_profiler.py` — Token counting accuracy
+- `test_session_store.py` — CRUD operations, fork graphs
+- `test_context_engine.py` — Trimming, pruning, injection
 
 ---
 
-## Uninstallation
+## 🗑 Uninstallation
 
-### Option A (venv)
-
+### Virtual Environment
 ```bash
-deactivate                  # Leave the virtual environment
-rm -rf /path/to/ContextOS   # Delete the project directory
+deactivate
+rm -rf /path/to/ContextOS
 ```
 
-That's it — everything is self-contained in the `.venv` folder, no system files were modified.
-
-### Option B (pipx)
-
+### pipx
 ```bash
 pipx uninstall contextos
 ```
 
-### Option C (pip)
-
+### pip
 ```bash
-pip uninstall contextos     # If installed via `pip install -e .`
-```
-
-Clean up any generated data files:
-
-```bash
-rm -f ./contextos.db        # SQLite database
-rm -rf dist/web             # Built frontend assets
+pip uninstall contextos
+rm -f ./contextos.db    # Optional: remove data
 ```
 
 ---
 
-## License
+## 📄 License
 
-MIT
+MIT License — see [LICENSE](LICENSE) for details.
