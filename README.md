@@ -1,114 +1,150 @@
 # ContextOS
 
-**Context Operating System — Claude 对话 Context 控制与 Session 管理系统**
+**Claude Context Operating System**
 
-ContextOS 是一个面向 Claude Code / Claude API 的中间层系统，通过 Proxy 拦截请求/响应，实现 Token 可观测、Context 压缩、Tool 裁剪、Session Fork 等能力，解决长对话 Context 爆炸和长任务断裂的问题。
+A transparent proxy layer for the Claude API that provides Token observability, context control, session management, and session fork capabilities — solving context explosion in long conversations and task interruption issues.
 
-## 快速开始
+[中文版](./README_zh.md)
+
+---
+
+## Features
+
+- **Token Observability** — Real-time prompt/completion token breakdown, stored and visualized
+- **Session Management** — Create, query, archive sessions with SQLite persistence
+- **Session Fork** — Branch conversations with parent/child lineage tracking, auto-fork at token thresholds
+- **Context Engine** — Message trimming, tool pruning, skill injection for context window control
+- **API Proxy** — Transparent Claude API proxy with request/response interception and logging
+- **Web Dashboard** — React-based SPA with React Flow fork graphs and Recharts token visualizations
+- **CLI** — Command-line tools for quick operations
+
+---
+
+## Quick Start
+
+### Prerequisites
+
+- Python 3.13+
+- Node.js 18+ (for frontend)
+- An [Anthropic API Key](https://console.anthropic.com/settings/keys)
+
+### Backend
 
 ```bash
-# 1. 安装依赖
-cd /mnt/chengrongfeng_private/cc_dump/ContextOS
+git clone https://github.com/CRF2004/ContextOS.git
+cd ContextOS
 pip install fastapi uvicorn httpx aiosqlite pydantic python-dotenv tiktoken
 
-# 2. 启动服务
 ANTHROPIC_API_KEY=sk-ant-... contextos run --port 8199
+```
 
-# 或使用 PYTHONPATH
+Or without installing as a package:
+
+```bash
 PYTHONPATH=src ANTHROPIC_API_KEY=sk-ant-... python -m contextos.cli run --port 8199
 ```
 
-### CLI 命令
+### Frontend (optional)
 
 ```bash
-# 启动 Proxy 服务
+cd web
+npm install
+npm run build    # builds to ../dist/web (served by FastAPI)
+```
+
+### Docker
+
+```bash
+# Coming soon
+```
+
+---
+
+## CLI
+
+```bash
+# Start the proxy server
 contextos run --port 8199 --db ./contextos.db --api-key sk-ant-...
 
-# 列出所有 Session
+# List all sessions
 contextos sessions
 
-# 查看 Token 用量
+# View token usage
 contextos tokens <session_id>
 
-# 查看请求日志
+# View request logs
 contextos logs <session_id>
 ```
 
-## API 端点
+---
 
-### Session 管理
-| 方法 | 端点 | 描述 |
-|------|------|------|
-| POST | `/api/sessions` | 创建新 Session |
-| GET | `/api/sessions` | 列出 Sessions |
-| GET | `/api/sessions/{id}` | 获取 Session 详情 |
-| POST | `/api/sessions/{id}/archive` | 归档 Session |
+## API Endpoints
 
-### Token 观测
-| 方法 | 端点 | 描述 |
-|------|------|------|
-| GET | `/api/sessions/{id}/tokens` | Token 用量汇总 |
-| GET | `/api/sessions/{id}/tokens/history` | Token 历史曲线 |
-| GET | `/api/sessions/{id}/requests` | 请求日志 |
-| POST | `/api/tokens/count` | 文本 Token 计数 |
+### Session Management
 
-### Context 控制
-| 方法 | 端点 | 描述 |
-|------|------|------|
-| POST | `/api/context/stats` | Context Token 统计 |
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/sessions` | Create a new session |
+| `GET`  | `/api/sessions` | List all sessions |
+| `GET`  | `/api/sessions/{id}` | Get session details |
+| `POST` | `/api/sessions/{id}/archive` | Archive a session |
+
+### Token Observability
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET`  | `/api/sessions/{id}/tokens` | Token usage summary |
+| `GET`  | `/api/sessions/{id}/tokens/history` | Token history timeline |
+| `GET`  | `/api/sessions/{id}/requests` | Request logs |
+| `POST` | `/api/tokens/count` | Count tokens in text |
+
+### Context Control
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/context/stats` | Get context token statistics |
 
 ### Session Fork
-| 方法 | 端点 | 描述 |
-|------|------|------|
-| POST | `/api/sessions/{id}/fork` | 分叉 Session |
-| GET | `/api/sessions/{id}/fork-graph` | Fork 关系图 |
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/sessions/{id}/fork` | Fork a session |
+| `GET`  | `/api/sessions/{id}/fork-graph` | Get fork relationship graph |
 
 ### Proxy
-| 方法 | 端点 | 描述 |
-|------|------|------|
-| POST | `/api/proxy/messages?session_id=xxx` | 转发 Claude API 请求 |
 
-## 项目结构
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/proxy/messages?session_id=xxx` | Forward request to Claude API |
+
+---
+
+## Project Structure
 
 ```
 ContextOS/
 ├── src/contextos/
-│   ├── server.py          # FastAPI 应用入口
-│   ├── proxy.py           # Proxy 层 — 拦截/转发 Claude API
-│   ├── token_profiler.py  # Token 分析器 — tiktoken 计数
-│   ├── session_store.py   # SQLite 持久化
-│   ├── context_engine.py  # Context 裁剪/工具修剪/Skill注入
-│   ├── fork_engine.py     # Session 分叉引擎
-│   ├── models.py          # Pydantic 数据模型
-│   └── cli.py             # CLI 入口
+│   ├── server.py           # FastAPI application entry
+│   ├── proxy.py            # Proxy layer — intercept & forward Claude API
+│   ├── token_profiler.py   # Token profiler — tiktoken-based counting
+│   ├── session_store.py    # SQLite persistence
+│   ├── context_engine.py   # Context trimming / tool pruning / skill injection
+│   ├── fork_engine.py      # Session fork engine
+│   ├── models.py           # Pydantic data models
+│   └── cli.py              # CLI entry point
+├── web/src/
+│   ├── App.tsx             # React router with sidebar navigation
+│   ├── api/client.ts       # TypeScript API client
+│   └── pages/              # Dashboard pages: sessions, tokens, fork graph, logs
 ├── tests/
 ├── pyproject.toml
-└── plan.md
+├── plan.md                 # Design docs & implementation roadmap
+└── README_zh.md            # Chinese version of this README
 ```
 
-## 实现进度
+---
 
-### Phase 1 — 最小可运行系统 ✅
-- [x] FastAPI Proxy Server 转发 Claude API
-- [x] Token Logger 记录请求/响应 Token 用量
-- [x] SQLite Session Storage
-- [x] CLI 可用
-- [x] 请求日志记录
-- [x] Token 曲线查询
-- [x] 26 个测试用例全部通过
-
-### Phase 2 — 可控系统 (代码已实现，待集成测试)
-- [x] Context Trimming（历史压缩）
-- [x] Tool Pruning（MCP 控制）
-- [x] Skill Injection（System Prompt 管理）
-
-### Phase 3 — 核心产品形态 (代码已实现，待前端)
-- [x] Fork Engine（手动 + 自动 Fork）
-- [x] Fork Graph（BFS 遍历 parent/child 链路）
-- [ ] Session Graph 可视化（React Flow）
-- [ ] Replay System（Session 回放）
-
-## 架构设计
+## Architecture
 
 ```
                  ┌──────────────────────┐
@@ -128,27 +164,35 @@ ContextOS/
                  └────┬──────┴──────┬──────┘
                       │             │
             ┌─────────▼─────────────▼─────────┐
-            │        Proxy Layer (关键)        │
+            │        Proxy Layer (core)        │
             │  Claude Code / API Intercept    │
             └─────────┬───────────────────────┘
                       │
                  Claude API
 ```
 
-## 设计原则
+---
 
-1. **Proxy-first：** 所有请求必须经过 Proxy
-2. **不依赖 Claude Code 内部：** 避免 SDK lock-in
-3. **基于 Request/Response Hook：** 所有能力都通过 Hook 实现
-4. **不做 Skill Compiler / MCP Registry / Agent Framework**
+## Design Principles
 
-## 运行测试
+1. **Proxy-first** — All requests must go through the proxy
+2. **SDK-independent** — No Claude Code SDK lock-in
+3. **Hook-based** — All capabilities implemented via request/response hooks
+4. **Not a Skill Compiler / MCP Registry / Agent Framework** — Focused scope
+
+---
+
+## Running Tests
 
 ```bash
 pip install pytest pytest-asyncio
 PYTHONPATH=src python -m pytest tests/ -v
 ```
 
-## 相关文件
+26 tests across 3 modules — all passing.
 
-- [plan.md](./plan.md) — 详细的需求定义、架构设计和实现路线
+---
+
+## License
+
+MIT
